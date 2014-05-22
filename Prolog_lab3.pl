@@ -1,90 +1,85 @@
-% N säger hur många gånger som vi ska tillåta programmet
-% att köra, detta kan användas då man backtrackar.
-% Trace ger ut en tuple med (item,destination).
-% state är det initiala tillståndet.
-
 % ---DEBUG---
 % spy(+predikat)
 % nospy(+predikat)
 % nodebug
 
-% + = input, - = output.
-% solvefgb(+state, +Dest, +N, -Trace).
+% N säger hur många gånger som vi ska tillåta programmet
+% att köra, detta kan användas då man backtrackar.
+% Trace ger ut en tuple med (item,destination).
+% state är det initiala tillståndet.
+%+ = input, - = output.
+%solvefgb(+state, +Dest, +N, -Trace).
 
-solvefgb(state, Dest, N, Trace) :-
-	initState(state, Dest, N).
+% Varje sak har en fixt position: [Goose, beans, fox, boat]. 
+canEat([west, east, west, east]).
+canEat([east, west, east, west]).
 
-initState([fox,beans,goose], west, N) :-
-	bagof(transfer(item, east, N, 0)).
-	
-canEat(fox, goose).
-canEat(goose, beans).
+canEat([west, west, east, east]).
+canEat([east, east, west, west]).
 
-transfer(item,dest,N,Steg):- N>=Steg.
-transfer(item,dest,N,Steg) :-
-	insert(item, Dest1, Dest2),
-	trace(dest, item),
-	write('Destination: '),
-	write(dest),
-	write('\n'),
-	write('Item: '),
-	write(item),
-	write('\n'),
-	del(item, Dest1, Dest2),
-	Steg is Steg+1,
-	length(Dest2,Int), % om längden av listan är lika med 1, åk tillbaka tomhänt.
-	transfer(item, dest, N, Steg).
-	
-trace(direc, item, List):-
-	insert([direc,item], X, Y).
+% transfer utför själva överföringen där vi kollar vilket item som tas över samt vilket
+% riktning den ska. 
+transfer(goose, east, [west, X, Y, west],[east, X, Y, east]).
+transfer(beans, east, [X, west, Y, west],[X, east, Y, east]).
+transfer(fox,   east, [X, Y, west, west],[X, Y, east, east]).
+transfer(boat,  east, [X, Y, Z, west],   [X, Y, Z, east]).
 
-insert(X, List, BiggerList):-
-	del(X, BiggerList, List).
+transfer(goose, west, [east, X, Y, east]  ,[ west, X,  Y, west]).
+transfer(beans, west, [X, east, Y, east]  ,[X,  west,  Y, west]).
+transfer(fox,   west, [X, Y, east, east],[X, Y, west, west]).
+transfer(boat,  west, [X, Y, Z, east] ,[X, Y,  Z, west]).
 
-del(X, [X | Tail], Tail).
-del(X, [Y | Tail], [Y | Tail1]):-
-del(X, Tail, Tail1).
-	
-member(X, [X | Tail]).
-member(X, [Head | Tail]) :-
-	member(X, Tail).
+solvefgb([east,east,east,east],_,_,_,[]).	% Är alla på east? -> stop.
+solvefgb(State, Dest, N, Steg, [(Dest2,Item)|Trace]):-
+	Steg1 is Steg + 1,
+	transfer(Item, Dest2, State, State2),
+	not(canEat(State2)),	% Kollar ifall ingenting kan ätas.
+	Steg1 =< N,
+	solvefgb(State2, Dest, N, Steg1, Trace).	% Anropar solvefgb med ny state.
+
+%transfer(Items,Dest,N,Steg):- N>=Steg.
+%transfer(Items,Dest,N,Steg) :-
+%	Steg is Steg+1,
+%	transfer(Items, Dest, N, Steg).
+
+%canEat(fox, goose);
+%canEat(goose, beans).	
 	
 % ------------ TEST ------------
+
+failure_driven_countdown :-
+        between(0,10,A),
+        N is 10 - A,
+        writeln(N),
+        A = 10.
 
 print_a_list([]).
 print_a_list([H|T]):-
 	write(H),
 	print_a_list(T).
+		
+%insert(X, List, BiggerList):-
+%del(X, BiggerList, List).
 
-parent(pam, bob).
-parent(tom,bob).
-parent(tom,liz).
-parent(bob,ann).
-parent(bob, pat).
-parent(pat, jim).
+%del(X, [X | Tail], Tail).
+%del(X, [Y | Tail], [Y | Tail1]):-
+%del(X, Tail, Tail1).
+	
+%member(X, [X | Tail]).
+%member(X, [Head | Tail]) :-
+%member(X, Tail).
 
-predecessor(X,Z):-
-write('test '),
-parent(X,Z).
-predecessor(X,Z):-
-parent(X,Y),
-predecessor(Y,Z).
+%parent(pam, bob).
+%parent(tom,bob).
+%parent(tom,liz).
+%parent(bob,ann).
+%parent(bob, pat).
+%parent(pat, jim).
 
-offspring(Y,X) :- parent(X,Y).
+%predecessor(X,Z):-
+%parent(X,Z).
+%predecessor(X,Z):-
+%parent(X,Y),
+%predecessor(Y,Z).
 
-mother_child(trude, sally).
- 
-father_child(tom, sally).
-father_child(tom, erica).
-father_child(mike, tom).
- 
-sibling(X, Y)      :- parent_child(Z, X), parent_child(Z, Y).
- 
-parent_child(X, Y) :- father_child(X, Y).
-parent_child(X, Y) :- mother_child(X, Y).
-
-predicate1(X) :-
-  predicate2(X,X).
-predicate2(X,Y) :-
-  X \= Y,
-  predicate1(X).
+%offspring(Y,X) :- parent(X,Y).
